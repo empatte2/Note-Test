@@ -1,4 +1,4 @@
-#imports
+#modules
 import random
 import time
 import math
@@ -15,14 +15,13 @@ def sine(frequency, length, rate):
 def generate_note_data(octaves, noteList,noteFreq):
     octPick = random.randint(octaves[0],octaves[1]) # gen the note's octave
     notePick = random.choice(noteList) # gen the note
-
     frequency = noteFreq[notePick][octPick] # this is the freq in Hz
     return octPick, notePick, frequency;
 
 
 def note_options(noteList, notePick):
     #Returns M/C options for the answer
-    print(notePick)
+    #print(notePick)
     noteList.remove(notePick) #remove right answer
     options = noteList
     options = random.sample(set(options), 3) # pick 3 remaining wrong answers
@@ -56,12 +55,8 @@ def play_tone(stream, noteList, frequency, length=1, rate=44100):
     ## this just plays the sound
     chunks = [] #init this guy
     chunks.append(sine(frequency, length, rate)) # add sine funciton
-
     chunk = numpy.concatenate(chunks) * 0.25 # add to chunks
-
     stream.write(chunk.astype(numpy.float32).tostring()) # modify the stream aka play sound
-
-
     #reset the stream boy
     p = pyaudio.PyAudio()
     stream = p.open(format=pyaudio.paFloat32,
@@ -96,12 +91,12 @@ octaves = [0]*2
 #decide octave choices
 if oneOct == 'n':
     # you only want one, so pick it
-    octaves[0] = int(input('What Octave do you want? (4 is middle): '))
+    octaves[0] = int(input('What Octave do you want? [0-8] (4 is middle): '))
     octaves[1] = octaves[0]
 elif oneOct == 'y':
     # you want two, pick them
-    octaves[0] = int(input('What is the starting Octave? (0-8): '))
-    octaves[1] = int(input('What is the ending Octave? (0-8): '))
+    octaves[0] = int(input('What is the starting Octave? [0-8]: '))
+    octaves[1] = int(input('What is the ending Octave? [0-8]: '))
 
 # init the stream boy
 p = pyaudio.PyAudio()
@@ -110,6 +105,7 @@ stream = p.open(format=pyaudio.paFloat32,
 
 numRounds = int(input('How many rounds do you want to play? '))
 points = 0
+
 for x in range(numRounds):
     octPick, notePick, frequency = generate_note_data(octaves, noteList, noteFreq)
     play_tone(stream, noteList, frequency)

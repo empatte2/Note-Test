@@ -1,9 +1,9 @@
 Update Notes:
-- optimize code
+- optimize code [DONE]
 - add show frequency option
-- add octave range selection
-- add scoring method in %
-- combine replay and guessing options
+- add octave range selection [DONE]
+- add scoring method [DONE]
+- combine replay and guessing options [DONE]
 - add alternate game-mode without multiple choice
 - add a streak counter
 - show which octave
