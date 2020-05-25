@@ -1,0 +1,11 @@
+Update Notes:
+- optimize code
+- add show frequency option
+- add octave range selection
+- add scoring method in %
+- combine replay and guessing options
+- add alternate game-mode without multiple choice
+- add a streak counter
+- show which octave
+- extra points for which octave
+- add key options (G major, F minor)

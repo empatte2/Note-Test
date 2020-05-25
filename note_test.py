@@ -1,605 +1,122 @@
-#modules
-import random 
+#imports
+import random
 import time
 import math
 import numpy
 import pyaudio
 
-#database
-Octave = {
-    "Cl":["Cl", 261.63],
-    "C#/d": ["C#/d", 277.18],
-    "D": ["D", 293.66],
-    "D#/e": ["D#/e", 311.13],
-    "E": ["E", 329.63],
-    "F": ["F", 349.23],
-    "F#/g": ["F#/g", 269.99],
-    "G": ["G", 392.00],
-    "G#/a": ["G#/a", 415.30],
-    "A": ["A", 440.00],
-    "A#/b": ["A#/b", 466.16],
-    "B": ["B", 493.88],
-    "Ch": ["Ch", 523.25],
-    }
-
+## FUNCTIONS ##
 #defining sine wave
 def sine(frequency, length, rate):
     length = int(length * rate)
     factor = float(frequency) * (math.pi * 2) / rate
     return numpy.sin(numpy.arange(length) * factor)
 
+def generate_note_data(octaves, noteList,noteFreq):
+    octPick = random.randint(octaves[0],octaves[1]) # gen the note's octave
+    notePick = random.choice(noteList) # gen the note
+
+    frequency = noteFreq[notePick][octPick] # this is the freq in Hz
+    return octPick, notePick, frequency;
+
+
+def note_options(noteList, notePick):
+    #Returns M/C options for the answer
+    print(notePick)
+    noteList.remove(notePick) #remove right answer
+    options = noteList
+    options = random.sample(set(options), 3) # pick 3 remaining wrong answers
+    sel = options.insert(3,notePick) #combine those 3 and add back right answer
+    random.shuffle(options) #mix those guys up
+    print(options)
+    return options
+
+def check_ans(noteList, notePick):
+    print('Here are your options: (R for replay)')
+    options = note_options(noteList, notePick)
+    answer = input('Pick an Answer: ').upper()
+    loop = 1
+    while (loop):
+        if answer == notePick:
+            print('Nice!')
+            global points
+            points = points +1
+            break
+        elif answer == 'R':
+            print('Playing again...')
+            play_tone(stream, noteList, frequency)
+        elif answer != notePick and (answer in options):
+            print('wrong')
+            loop = 0
+        else:
+            print('oops you input something incorrectly, try again')
+            answer = input('Pick an Answer: ').upper()
+
+def play_tone(stream, noteList, frequency, length=1, rate=44100):
+    ## this just plays the sound
+    chunks = [] #init this guy
+    chunks.append(sine(frequency, length, rate)) # add sine funciton
+
+    chunk = numpy.concatenate(chunks) * 0.25 # add to chunks
+
+    stream.write(chunk.astype(numpy.float32).tostring()) # modify the stream aka play sound
+
+
+    #reset the stream boy
+    p = pyaudio.PyAudio()
+    stream = p.open(format=pyaudio.paFloat32,
+                    channels=1, rate=44100, output=1)
+
+## THE CODEY BIT
+# dict of frequencies
+noteList = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'] # all the notes
+# C = [C0, C1, C2, C3, C4, C5, C6, C7, C8]
+#humans cannot really hear the 0th octave and you'll probably have trouble with
+#   the 1st as well but the option is fun
+noteFreq = {
+    'C': [16.35, 32.70, 65.41,  130.81, 261.63, 523.35, 1046.50, 2093.00, 4186.01],
+    'C#':[17.32, 34.65, 69.30,  138.59, 277.18, 554.37, 1108.73, 2217.46, 4434.92],
+    'D': [18.35, 36.71, 73.42,  146.83, 293.66, 587.33, 1174.66, 2349.32, 4698.63],
+    'D#':[19.45, 38.89, 77.78,  155.56, 311.13, 622.25, 1244.51, 2489.02, 4978.03],
+    'E': [20.60, 41.20, 81.41,  164.81, 329.63, 659.25, 1318.51, 2637.02, 5274.04],
+    'F': [21.83, 43.65, 87.31,  174.61, 349.23, 698.46, 1396.91, 2793.83, 5587.65],
+    'F#':[23.12, 46.25, 92.50,  185.00, 369.99, 739.99, 1479.98, 2959.96, 5919.91],
+    'G': [24.50, 49.00, 98.00,  196.00, 392.00, 783.99, 1567.98, 3135.96, 6271.93],
+    'G#':[25.96, 51.91, 103.83, 207.65, 415.30, 830.61, 1661.22, 3322.44, 6644.88],
+    'A': [27.50, 55.00, 110.00, 220.00, 440.00, 880.00, 1760.00, 3520.00, 7040.00],
+    'A#':[29.14, 58.27, 116.54, 233.08, 466.16, 932.33, 1864.66, 3729.31, 7458.62],
+    'B': [30.87, 61.74, 123.47, 246.94, 493.88, 987.77, 1975.53, 3951.07, 7902.13]
+}
+
+#asks if you want more than one octave, makes lowercase
+oneOct = input('Would you like more than one octave? (y/n): ').lower()
+# initializes empty array, 2 long
+octaves = [0]*2
+
+#decide octave choices
+if oneOct == 'n':
+    # you only want one, so pick it
+    octaves[0] = int(input('What Octave do you want? (4 is middle): '))
+    octaves[1] = octaves[0]
+elif oneOct == 'y':
+    # you want two, pick them
+    octaves[0] = int(input('What is the starting Octave? (0-8): '))
+    octaves[1] = int(input('What is the ending Octave? (0-8): '))
+
+# init the stream boy
+p = pyaudio.PyAudio()
+stream = p.open(format=pyaudio.paFloat32,
+                channels=1, rate=44100, output=1)
+
+numRounds = int(input('How many rounds do you want to play? '))
+points = 0
+for x in range(numRounds):
+    octPick, notePick, frequency = generate_note_data(octaves, noteList, noteFreq)
+    play_tone(stream, noteList, frequency)
+    check_ans(noteList, notePick)
 
+print('You scored ', points, '/', numRounds)
 
-
-#names of notes
-options = ["Cl","C#/d","D","D#/e","E","F","F#/g","G","G#/a","A","A#/b","B","Ch"]
-
-
-score = 0
-
-#responses
-gj = "Good Job!"
-s = "sorry"
-
-
-print ("ready")
-time.sleep(1)
-print ("set")
-time.sleep(1)
-print("begin")
-time.sleep(1)
-
-y = 'y'
-
-while y == 'y':
-    try:
-        a = None
-        while a is None:
-            try:
-                a = int(input("How many rounds would you like to play?: "))
-            except ValueError:
-                print("Not an integer value...")
-        for x in range(a) :
-            print ("round", x)
-            print("Here is your note:")
-            time.sleep(2)
-            i = random.random()
-            play_again = 'y'
-            if i<= (1/13):
-                options = ["Cl","C#/d","D","D#/e","E","F","F#/g","G","G#/a","A","A#/b","B","Ch"]
-                options.remove(Octave["Cl"][0])
-                options = random.sample(set(options), 3)
-                sel = options.insert(3,Octave["Cl"][0])
-                random.shuffle(options)
-                print (options)
-                while play_again == 'y':
-                    #play Octave["Cl"][1]
-                    def play_tone(stream, frequency=Octave["Cl"][1], length=1, rate=44100):
-                        chunks = []
-                        chunks.append(sine(frequency, length, rate))
-
-                        chunk = numpy.concatenate(chunks) * 0.25
-
-                        stream.write(chunk.astype(numpy.float32).tostring())
-
-                    p = pyaudio.PyAudio()
-                    stream = p.open(format=pyaudio.paFloat32,
-                                    channels=1, rate=44100, output=1)
-
-                    play_tone(stream)
-
-                    stream.close()
-                    p.terminate()
-                    play_again = input('Play note again? (y/n)')
-                    
-                ans = input('Pick the right note!: ')
-                ans = ans.lower()
-                time.sleep(1)
-                if ans == "cl":
-                    score = score + 1
-                    print (gj)
-                else:
-                    print (s)
-                print ('it was Cl')
-                play_again = "y"
-                time.sleep(1)
-                print ("Score: ", score)
-                time.sleep(1)
-                
-            elif i>= (1/13) and i<= (2/13):
-                options = ["Cl","C#/d","D","D#/e","E","F","F#/g","G","G#/a","A","A#/b","B","Ch"]
-                options.remove(Octave["C#/d"][0])
-                options = random.sample(set(options), 3)
-                sel = options.insert(3,Octave["C#/d"][0])
-                random.shuffle(options)
-                print (options)
-                while play_again == 'y':
-                    #play Octave["C#/d"][1]
-                    def play_tone(stream, frequency=Octave["C#/d"][1], length=1, rate=44100):
-                        chunks = []
-                        chunks.append(sine(frequency, length, rate))
-
-                        chunk = numpy.concatenate(chunks) * 0.25
-
-                        stream.write(chunk.astype(numpy.float32).tostring())
-
-                    p = pyaudio.PyAudio()
-                    stream = p.open(format=pyaudio.paFloat32,
-                                    channels=1, rate=44100, output=1)
-
-                    play_tone(stream)
-
-                    stream.close()
-                    p.terminate()
-                    play_again = input('Play note again? (y/n)')
-                
-                ans = input('Pick the right note!: ')
-                ans = ans.lower()
-                time.sleep(1)
-                if ans == "c#/d":
-                    score = score + 1
-                    print (gj)
-                else:
-                    print (s)
-
-                print ('it was C#/d')
-                time.sleep(1)
-                print ("Score: ", score)
-                time.sleep(1)
-                
-            elif i>= (2/13) and i<= (3/13):
-                options = ["Cl","C#/d","D","D#/e","E","F","F#/g","G","G#/a","A","A#/b","B","Ch"]
-                options.remove(Octave["D"][0])
-                options = random.sample(set(options), 3)
-                sel = options.insert(3,Octave["D"][0])
-                random.shuffle(options)
-                print (options)
-                while play_again == 'y':
-                    #play Octave["D"][1]
-                    def play_tone(stream, frequency=Octave["D"][1], length=1, rate=44100):
-                        chunks = []
-                        chunks.append(sine(frequency, length, rate))
-
-                        chunk = numpy.concatenate(chunks) * 0.25
-
-                        stream.write(chunk.astype(numpy.float32).tostring())
-
-                    p = pyaudio.PyAudio()
-                    stream = p.open(format=pyaudio.paFloat32,
-                                    channels=1, rate=44100, output=1)
-
-                    play_tone(stream)
-
-                    stream.close()
-                    p.terminate()
-                    play_again = input('Play note again? (y/n)')
-                    
-                ans = input('Pick the right note!: ')
-                ans = ans.lower()
-                time.sleep(1)
-                if ans == "d":
-                    score = score + 1
-                    print (gj)
-                else:
-                    print (s)
-
-                print ('it was D')
-                time.sleep(1)
-                print ("Score: ", score)
-                time.sleep(1)
-                
-            elif i>= (3/13) and i<= (4/13):
-                options = ["Cl","C#/d","D","D#/e","E","F","F#/g","G","G#/a","A","A#/b","B","Ch"]
-                options.remove(Octave["D#/e"][0])
-                options = random.sample(set(options), 3)
-                sel = options.insert(3,Octave["D#/e"][0])
-                random.shuffle(options)
-                print (options)
-                while play_again == 'y':
-                    #play Octave["D#/e"][1]
-                    def play_tone(stream, frequency=Octave["D#/e"][1], length=1, rate=44100):
-                        chunks = []
-                        chunks.append(sine(frequency, length, rate))
-
-                        chunk = numpy.concatenate(chunks) * 0.25
-
-                        stream.write(chunk.astype(numpy.float32).tostring())
-
-                    p = pyaudio.PyAudio()
-                    stream = p.open(format=pyaudio.paFloat32,
-                                    channels=1, rate=44100, output=1)
-
-                    play_tone(stream)
-
-                    stream.close()
-                    p.terminate()
-                    play_again = input('Play note again? (y/n)')
-                
-                ans = input('Pick the right note!: ')
-                ans = ans.lower()
-                time.sleep(1)
-                if ans == "d#/e":
-                    score = score + 1
-                    print (gj)
-                else:
-                    print (s)
-                    
-                print ('it was D#/e')
-                time.sleep(1)
-                print ("Score: ", score)
-                time.sleep(1)
-                
-            elif i>= (4/13) and i<= (5/13):
-                options = ["Cl","C#/d","D","D#/e","E","F","F#/g","G","G#/a","A","A#/b","B","Ch"]
-                options.remove(Octave["E"][0])
-                options = random.sample(set(options), 3)
-                sel = options.insert(3,Octave["E"][0])
-                random.shuffle(options)
-                print (options)
-                while play_again == 'y':
-                    #play Octave["E"][1]
-                    def play_tone(stream, frequency=Octave["E"][1], length=1, rate=44100):
-                        chunks = []
-                        chunks.append(sine(frequency, length, rate))
-
-                        chunk = numpy.concatenate(chunks) * 0.25
-
-                        stream.write(chunk.astype(numpy.float32).tostring())
-
-                    p = pyaudio.PyAudio()
-                    stream = p.open(format=pyaudio.paFloat32,
-                                    channels=1, rate=44100, output=1)
-
-                    play_tone(stream)
-
-                    stream.close()
-                    p.terminate()
-                    play_again = input('Play note again? (y/n)')
-                    
-                ans = input('Pick the right note!: ')
-                ans = ans.lower()
-                time.sleep(1)
-                if ans == "e":
-                    score = score + 1
-                    print (gj)
-                else:
-                    print (s)
-
-                print ('it was E')
-                time.sleep(1)
-                print ("Score: ", score)
-                time.sleep(1)
-                
-            elif i>= (5/13) and i<= (6/13):
-                options = ["Cl","C#/d","D","D#/e","E","F","F#/g","G","G#/a","A","A#/b","B","Ch"]
-                options.remove(Octave["F"][0])
-                options = random.sample(set(options), 3)
-                sel = options.insert(3,Octave["F"][0])
-                random.shuffle(options)
-                print (options)
-                while play_again == 'y':
-                    #play Octave["F"][1]
-                    def play_tone(stream, frequency=Octave["F"][1], length=1, rate=44100):
-                        chunks = []
-                        chunks.append(sine(frequency, length, rate))
-
-                        chunk = numpy.concatenate(chunks) * 0.25
-
-                        stream.write(chunk.astype(numpy.float32).tostring())
-
-                    p = pyaudio.PyAudio()
-                    stream = p.open(format=pyaudio.paFloat32,
-                                    channels=1, rate=44100, output=1)
-
-                    play_tone(stream)
-
-                    stream.close()
-                    p.terminate()
-                    play_again = input('Play note again? (y/n)')
-                    
-                ans = input('Pick the right note!: ')
-                ans = ans.lower()
-                time.sleep(1)
-                if ans == "f":
-                    score = score + 1
-                    print (gj)
-                else:
-                    print (s)
-
-                print ('it was F')
-                time.sleep(1)
-                print ("Score: ", score)
-                time.sleep(1)
-                
-            elif i>= (6/13) and i<= (7/13):
-                options = ["Cl","C#/d","D","D#/e","E","F","F#/g","G","G#/a","A","A#/b","B","Ch"]
-                options.remove(Octave["F#/g"][0])
-                options = random.sample(set(options), 3)
-                sel = options.insert(3,Octave["F#/g"][0])
-                random.shuffle(options)
-                print (options)
-                while play_again == 'y':
-                    #play Octave["F#/g"][1]
-                    def play_tone(stream, frequency=Octave["F#/g"][1], length=1, rate=44100):
-                        chunks = []
-                        chunks.append(sine(frequency, length, rate))
-
-                        chunk = numpy.concatenate(chunks) * 0.25
-
-                        stream.write(chunk.astype(numpy.float32).tostring())
-
-                    p = pyaudio.PyAudio()
-                    stream = p.open(format=pyaudio.paFloat32,
-                                    channels=1, rate=44100, output=1)
-
-                    play_tone(stream)
-
-                    stream.close()
-                    p.terminate()
-                    play_again = input('Play note again? (y/n)')
-                    
-                ans = input('Pick the right note!: ')
-                ans = ans.lower()
-                time.sleep(1)
-                if ans == "f#/g":
-                    score = score + 1
-                    print (gj)
-                else:
-                    print (s)
-
-                print ('it was F#/g')
-                time.sleep(1)
-                print ("Score: ", score)
-                time.sleep(1)
-                
-            elif i>= (7/13) and i<= (8/13):
-                options = ["Cl","C#/d","D","D#/e","E","F","F#/g","G","G#/a","A","A#/b","B","Ch"]
-                options.remove(Octave["G"][0])
-                options = random.sample(set(options), 3)
-                sel = options.insert(3,Octave["G"][0])
-                random.shuffle(options)
-                print (options)
-                while play_again == 'y':
-                    #play Octave["G"][1]
-                    def play_tone(stream, frequency=Octave["G"][1], length=1, rate=44100):
-                        chunks = []
-                        chunks.append(sine(frequency, length, rate))
-
-                        chunk = numpy.concatenate(chunks) * 0.25
-
-                        stream.write(chunk.astype(numpy.float32).tostring())
-
-                    p = pyaudio.PyAudio()
-                    stream = p.open(format=pyaudio.paFloat32,
-                                    channels=1, rate=44100, output=1)
-
-                    play_tone(stream)
-
-                    stream.close()
-                    p.terminate()
-                    play_again = input('Play note again? (y/n)')
-                
-                ans = input('Pick the right note!: ')
-                ans = ans.lower()
-                time.sleep(1)
-                if ans == "g":
-                    score = score + 1
-                    print (gj)
-                else:
-                    print (s)
-
-                print ('it was G')
-                time.sleep(1)
-                print ("Score: ", score)
-                time.sleep(1)
-                
-            elif i>= (8/13) and i<= (9/13):
-                options = ["Cl","C#/d","D","D#/e","E","F","F#/g","G","G#/a","A","A#/b","B","Ch"]
-                options.remove(Octave["G#/a"][0])
-                options = random.sample(set(options), 3)
-                sel = options.insert(3,Octave["G#/a"][0])
-                random.shuffle(options)
-                print (options)
-                while play_again == 'y':
-                    #play Octave["G#/a"][1]
-                    def play_tone(stream, frequency=Octave["G#/a"][1], length=1, rate=44100):
-                        chunks = []
-                        chunks.append(sine(frequency, length, rate))
-
-                        chunk = numpy.concatenate(chunks) * 0.25
-
-                        stream.write(chunk.astype(numpy.float32).tostring())
-
-                    p = pyaudio.PyAudio()
-                    stream = p.open(format=pyaudio.paFloat32,
-                                    channels=1, rate=44100, output=1)
-
-                    play_tone(stream)
-
-                    stream.close()
-                    p.terminate()
-                    play_again = input('Play note again? (y/n)')
-                    
-                ans = input('Pick the right note!: ')
-                ans = ans.lower()
-                time.sleep(1)
-                if ans == "g#/a":
-                    score = score + 1
-                    print (gj)
-                else:
-                    print (s)
-
-                print ('it was G#/a')
-                time.sleep(1)
-                print ("Score: ", score)
-                time.sleep(1)
-                
-            elif i>= (9/13) and i<= (10/13):
-                options = ["Cl","C#/d","D","D#/e","E","F","F#/g","G","G#/a","A","A#/b","B","Ch"]
-                options.remove(Octave["A"][0])
-                options = random.sample(set(options), 3)
-                sel = options.insert(3,Octave["A"][0])
-                random.shuffle(options)
-                print (options)
-                while play_again == 'y':
-                    #play Octave["A"][1]
-                    def play_tone(stream, frequency=Octave["A"][1], length=1, rate=44100):
-                        chunks = []
-                        chunks.append(sine(frequency, length, rate))
-
-                        chunk = numpy.concatenate(chunks) * 0.25
-
-                        stream.write(chunk.astype(numpy.float32).tostring())
-
-                    p = pyaudio.PyAudio()
-                    stream = p.open(format=pyaudio.paFloat32,
-                                    channels=1, rate=44100, output=1)
-
-                    play_tone(stream)
-
-                    stream.close()
-                    p.terminate()
-                    play_again = input('Play note again? (y/n)')
-                    
-                ans = input('Pick the right note!: ')
-                ans = ans.lower()
-                time.sleep(1)
-                if ans == "a":
-                    score = score + 1
-                    print (gj)
-                else:
-                    print (s)
-
-                print ('it was A')
-                time.sleep(1)
-                print ("Score: ", score)
-                time.sleep(1)
-                
-            elif i>= (10/13) and i<= (11/13):
-                options = ["Cl","C#/d","D","D#/e","E","F","F#/g","G","G#/a","A","A#/b","B","Ch"]
-                options.remove(Octave["A#/b"][0])
-                options = random.sample(set(options), 3)
-                sel = options.insert(3,Octave["A#/b"][0])
-                random.shuffle(options)
-                print (options)
-                while play_again == 'y':
-                    #play Octave["A#/b"][1]
-                    def play_tone(stream, frequency=Octave["A#/b"][1], length=1, rate=44100):
-                        chunks = []
-                        chunks.append(sine(frequency, length, rate))
-
-                        chunk = numpy.concatenate(chunks) * 0.25
-
-                        stream.write(chunk.astype(numpy.float32).tostring())
-
-                    p = pyaudio.PyAudio()
-                    stream = p.open(format=pyaudio.paFloat32,
-                                    channels=1, rate=44100, output=1)
-
-                    play_tone(stream)
-
-                    stream.close()
-                    p.terminate()
-                    play_again = input('Play note again? (y/n)')
-                    
-                ans = input('Pick the right note!: ')
-                ans = ans.lower()
-                time.sleep(1)
-                if ans == "a#/b":
-                    score = score + 1
-                    print (gj)
-                else:
-                    print (s)
-
-                print ('it was A#/b')
-                time.sleep(1)
-                print ("Score: ", score)
-                time.sleep(1)
-                
-            elif i>= (11/13) and i<= (12/13):
-                options = ["Cl","C#/d","D","D#/e","E","F","F#/g","G","G#/a","A","A#/b","B","Ch"]
-                options.remove(Octave["B"][0])
-                options = random.sample(set(options), 3)
-                sel = options.insert(3,Octave["B"][0])
-                random.shuffle(options)
-                print (options)
-                while play_again == 'y':
-                    #play Octave["B"][1]
-                    def play_tone(stream, frequency=Octave["B"][1], length=1, rate=44100):
-                        chunks = []
-                        chunks.append(sine(frequency, length, rate))
-
-                        chunk = numpy.concatenate(chunks) * 0.25
-
-                        stream.write(chunk.astype(numpy.float32).tostring())
-
-                    p = pyaudio.PyAudio()
-                    stream = p.open(format=pyaudio.paFloat32,
-                                    channels=1, rate=44100, output=1)
-
-                    play_tone(stream)
-
-                    stream.close()
-                    p.terminate()
-                    play_again = input('Play note again? (y/n)')
-                    
-                ans = input('Pick the right note!: ')
-                ans = ans.lower()
-                time.sleep(1)
-                if ans == "b":
-                    score = score + 1
-                    print (gj)
-                else:
-                    print (s)
-
-                print ('it was B')
-                time.sleep(1)
-                print ("Score: ", score)
-                time.sleep(1)
-                
-            elif i>= (12/13) and i<= (13/13):
-                options = ["Cl","C#/d","D","D#/e","E","F","F#/g","G","G#/a","A","A#/b","B","Ch"]
-                options.remove(Octave["Ch"][0])
-                options = random.sample(set(options), 3)
-                sel = options.insert(3,Octave["Ch"][0])
-                random.shuffle(options)
-                print (options)
-                while play_again == 'y':
-                    #play Octave["Ch"][1]
-                    def play_tone(stream, frequency=Octave["Ch"][1], length=1, rate=44100):
-                        chunks = []
-                        chunks.append(sine(frequency, length, rate))
-
-                        chunk = numpy.concatenate(chunks) * 0.25
-
-                        stream.write(chunk.astype(numpy.float32).tostring())
-
-                    p = pyaudio.PyAudio()
-                    stream = p.open(format=pyaudio.paFloat32,
-                                    channels=1, rate=44100, output=1)
-
-                    play_tone(stream)
-
-                    stream.close()
-                    p.terminate()
-                    play_again = input('Play note again? (y/n)')
-                    
-                ans = input('Pick the right note!: ')
-                ans = ans.lower()
-                time.sleep(1)
-                if ans == "ch":
-                    score = score + 1
-                    print (gj)
-                else:
-                    print (s)
-
-                print ('it was Ch')
-                time.sleep(1)
-                print ("Score: ", score)
-                time.sleep(1)
-        score = 0
-        y = str(input("would you like to play again [y/n]: "))
-    except ValueError:
-        print("bye")
-    
-
+#close audio stream
+stream.close()
+p.terminate()
